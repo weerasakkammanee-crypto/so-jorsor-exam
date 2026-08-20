@@ -27,6 +27,7 @@ async function hmacSha256Base64(secret, message) {
   return base64FromArrayBuffer(sig);
 }
 
+// เทียบแบบ constant-time กันเดา signature (Web Crypto API ไม่มี timingSafeEqual ให้ใช้ตรงๆ แบบ node:crypto)
 function timingSafeEqualStr(a, b) {
   if (a.length !== b.length) return false;
   let result = 0;
@@ -48,7 +49,7 @@ async function lineApi(path, body, accessToken) {
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify(body),
-  }).catch(() => {});
+  }).catch(() => {}); // ไม่ทำให้ webhook ทั้งก้อนพังถ้าส่งข้อความไม่สำเร็จ
 }
 
 function replyText(replyToken, text, accessToken) {
@@ -137,14 +138,6 @@ export default {
 
     const rawBody = await request.text();
     const signature = request.headers.get('x-line-signature');
-
-    // DEBUG (ชั่วคราว — เอาไว้หาสาเหตุ signature ไม่ตรง เดี๋ยวลบออกทีหลัง)
-    const secretForDebug = env.LINE_CHANNEL_SECRET || '';
-    const expectedForDebug = secretForDebug ? await hmacSha256Base64(secretForDebug, rawBody) : '(no secret set)';
-    console.log('DEBUG bodyLength=' + rawBody.length);
-    console.log('DEBUG receivedSignature=' + signature);
-    console.log('DEBUG computedSignature=' + expectedForDebug);
-    console.log('DEBUG secretLength=' + secretForDebug.length + ' secretPreview=' + secretForDebug.slice(0, 4) + '...' + secretForDebug.slice(-4));
 
     const validSig = await verifySignature(rawBody, signature, env.LINE_CHANNEL_SECRET || '');
     if (!validSig) {
