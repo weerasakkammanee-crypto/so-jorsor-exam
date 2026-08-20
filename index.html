@@ -158,6 +158,15 @@ function clearSession(){
   try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
 }
 
+function debugSuffix(resp){
+  // แสดง error code ดิบต่อท้ายข้อความ เผื่อเจอ error ที่ยังไม่ได้ map เป็นภาษาไทยไว้ จะได้ debug ง่ายขึ้น
+  if (!resp) return '';
+  var parts = [];
+  if (resp.error) parts.push(resp.error);
+  if (resp.message) parts.push(resp.message);
+  return parts.length ? ' [' + parts.join(': ') + ']' : '';
+}
+
 function apiCall(action, payload){
   // ใช้ GET แทน POST เพราะ fetch ข้าม origin ไปหา Apps Script exec URL แบบ POST
   // มักโดนเบราว์เซอร์บล็อกเรื่อง CORS (โดยเฉพาะตอนเปิดไฟล์ตรงๆ แบบ file://)
@@ -236,7 +245,7 @@ function renderLogin(opts){
         renderHome();
         return;
       }
-      var msg = 'เข้าสู่ระบบไม่สำเร็จ';
+      var msg = 'เข้าสู่ระบบไม่สำเร็จ' + debugSuffix(resp);
       if (resp.error === 'invalid_credentials') msg = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
       else if (resp.error === 'pending_approval') msg = 'บัญชีของคุณกำลังรอการอนุมัติจากแอดมิน กรุณารอการติดต่อกลับ';
       else if (resp.error === 'suspended') msg = 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อแอดมิน';
@@ -308,7 +317,7 @@ function renderRegister(){
         renderLogin({message: 'สมัครสมาชิกสำเร็จ กรุณารอแอดมินอนุมัติก่อนเข้าสู่ระบบ', messageType:'success'});
         return;
       }
-      var msg = 'สมัครสมาชิกไม่สำเร็จ';
+      var msg = 'สมัครสมาชิกไม่สำเร็จ' + debugSuffix(resp);
       if (resp.error === 'username_taken') msg = 'ชื่อผู้ใช้นี้มีคนใช้แล้ว';
       else if (resp.error === 'invalid_username') msg = 'ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร';
       else if (resp.error === 'invalid_password') msg = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
@@ -726,7 +735,8 @@ function renderAdminLogin(){
       if (!resp.ok){
         adminKey = null;
         msgHolder.innerHTML = '';
-        msgHolder.appendChild(el('<div class="msg msg-error">รหัสลับไม่ถูกต้อง</div>'));
+        var adminMsg = resp.error === 'unauthorized' ? 'รหัสลับไม่ถูกต้อง' : ('เกิดข้อผิดพลาด' + debugSuffix(resp));
+        msgHolder.appendChild(el('<div class="msg msg-error">' + adminMsg + '</div>'));
         return;
       }
       renderAdminPanel('users', resp.users);
