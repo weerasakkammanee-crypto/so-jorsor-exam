@@ -102,7 +102,7 @@
 
 /* ================= CONFIG ================= */
 var SERVER_URL = 'https://script.google.com/macros/s/AKfycbynNa4WJCT_HWEFIXSzWeGjLm58uO5tJeruYZ_Ry526S_JVY26oFvnz5gAEXFM_ygtDCw/exec';
-var EXPECTED_SERVER_VERSION = 'v1-initial-2026-08-20';
+var EXPECTED_SERVER_VERSION = 'v2-get-transport-2026-08-20';
 var STORAGE_KEY = 'sjExamSession_v1';
 var MOCK_EXAM_SIZE = 60;
 var MOCK_EXAM_SECONDS = 60 * 60; // 60 นาที
@@ -159,12 +159,13 @@ function clearSession(){
 }
 
 function apiCall(action, payload){
+  // ใช้ GET แทน POST เพราะ fetch ข้าม origin ไปหา Apps Script exec URL แบบ POST
+  // มักโดนเบราว์เซอร์บล็อกเรื่อง CORS (โดยเฉพาะตอนเปิดไฟล์ตรงๆ แบบ file://)
+  // ส่วน GET ธรรมดา (ไม่มี custom header) ผ่านได้ชัวร์กว่า ฝั่งเซิร์ฟเวอร์รองรับผ่าน doGet แล้ว
   var body = Object.assign({action: action}, payload || {});
-  return fetch(SERVER_URL, {
-    method: 'POST',
-    headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify(body)
-  }).then(function(res){ return res.json(); })
+  var url = SERVER_URL + '?action=' + encodeURIComponent(action) + '&payload=' + encodeURIComponent(JSON.stringify(body));
+  return fetch(url, { method: 'GET' })
+    .then(function(res){ return res.json(); })
     .catch(function(err){ return {ok:false, error:'network_error', message:String(err)}; });
 }
 
