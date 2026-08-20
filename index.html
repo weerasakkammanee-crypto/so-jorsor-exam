@@ -106,7 +106,7 @@
 // (เปิด URL ตรงๆ ในเบราว์เซอร์ใช้ได้ปกติ แต่ fetch()/XHR ข้าม origin จะโดนบล็อกเสมอ)
 // ตัว Netlify Function เองต่างหากที่เก็บ SERVER_URL จริงไว้ (ดู netlify/functions/api.mts)
 var API_PROXY_PATH = '/api';
-var EXPECTED_SERVER_VERSION = 'v2-get-transport-2026-08-20';
+var EXPECTED_SERVER_VERSION = 'v3-practice-instant-feedback-2026-08-20';
 var STORAGE_KEY = 'sjExamSession_v1';
 var MOCK_EXAM_SIZE = 60;
 var MOCK_EXAM_SECONDS = 60 * 60; // 60 นาที
@@ -384,8 +384,8 @@ function renderHome(){
 
   var grid = el('<div class="menu-grid"></div>');
   var items = [
-    {icon:'📝', label:'ฝึกทำรายวิชา', fn: renderSubjectPicker},
-    {icon:'⏱️', label:'จำลองการสอบ (' + MOCK_EXAM_SIZE + ' ข้อ)', fn: startMockExam},
+    {icon:'📝', label:'ฝึกทำรายวิชา (เฉลยทันที)', fn: renderSubjectPicker},
+    {icon:'⏱️', label:'จำลองการสอบ (กำหนดเอง)', fn: renderMockExamPicker},
     {icon:'📊', label:'ประวัติคะแนนของฉัน', fn: renderHistory},
     {icon:'🏠', label:'กลับหน้าหลัก', fn: renderHome},
   ];
@@ -454,21 +454,64 @@ function renderSubjectPicker(){
   app.appendChild(main);
 }
 
-function startMockExam(){
+function renderMockExamPicker(){
+  app.innerHTML = '';
+  app.appendChild(el('<div class="topbar"><div class="brand"><span class="badge">จสอ</span> ตั้งค่าจำลองการสอบ</div><button id="backBtn">กลับ</button></div>'));
+  app.querySelector('#backBtn').addEventListener('click', renderHome);
+
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+  var card = el('<div class="card"></div>');
+  card.appendChild(el('<h1>จำลองการสอบ</h1><p class="sub">กำหนดจำนวนข้อและเวลาที่ต้องการก่อนเริ่มทำ (คละทุกวิชา เหมือนสอบจริง ไม่มีเฉลยจนกว่าจะส่งคำตอบ)</p>'));
+
+  card.appendChild(el('<label>จำนวนข้อ</label>'));
+  var countInput = el('<input type="number" min="1" max="2000" step="1" value="' + MOCK_EXAM_SIZE + '" />');
+  card.appendChild(countInput);
+
+  card.appendChild(el('<label style="margin-top:10px;display:block;">เวลาทำข้อสอบ (นาที)</label>'));
+  var minutesInput = el('<input type="number" min="1" max="300" step="1" value="' + (MOCK_EXAM_SECONDS / 60) + '" />');
+  card.appendChild(minutesInput);
+
+  var msgHolder = el('<div></div>');
+  card.appendChild(msgHolder);
+
+  var startBtn = el('<button class="btn btn-primary" style="margin-top:14px;">เริ่มทำข้อสอบจำลอง</button>');
+  startBtn.addEventListener('click', function(){
+    var n = parseInt(countInput.value, 10);
+    var mins = parseInt(minutesInput.value, 10);
+    msgHolder.innerHTML = '';
+    if (!n || n < 1){
+      msgHolder.appendChild(el('<div class="msg msg-error">กรุณาระบุจำนวนข้ออย่างน้อย 1 ข้อ</div>'));
+      return;
+    }
+    if (!mins || mins < 1){
+      msgHolder.appendChild(el('<div class="msg msg-error">กรุณาระบุเวลาอย่างน้อย 1 นาที</div>'));
+      return;
+    }
+    startBtn.disabled = true;
+    startBtn.textContent = 'กำลังโหลดข้อสอบ...';
+    startMockExam(n, mins * 60);
+  });
+  card.appendChild(startBtn);
+  wrap.appendChild(card);
+  app.appendChild(main);
+}
+
+function startMockExam(numQuestions, seconds){
   app.innerHTML = '';
   app.appendChild(el('<div class="topbar"><div class="brand"><span class="badge">จสอ</span> กำลังเตรียมชุดข้อสอบจำลอง...</div></div>'));
   apiCall('getQuestions', {username: session.username, sessionToken: session.sessionToken, subject: 'all'}).then(function(resp){
     if (handleSessionInvalidIfNeeded(resp)) return;
     if (!resp.ok){ renderHome(); return; }
-    // สุ่มแบบกระจายตามสัดส่วนของแต่ละวิชาคร่าวๆ โดยสับทั้งหมดแล้วตัด MOCK_EXAM_SIZE ข้อแรก
+    // สุ่มแบบกระจายตามสัดส่วนของแต่ละวิชาคร่าวๆ โดยสับทั้งหมดแล้วตัดตามจำนวนข้อที่กำหนด
     var pool = shuffle(resp.questions);
-    var picked = pool.slice(0, Math.min(MOCK_EXAM_SIZE, pool.length));
+    var picked = pool.slice(0, Math.min(numQuestions, pool.length));
     startQuiz({
       questions: picked,
       mode: 'mock',
       subject: 'mixed',
-      subjectLabel: 'จำลองการสอบ (คละทุกวิชา)',
-      timeLimit: MOCK_EXAM_SECONDS,
+      subjectLabel: 'จำลองการสอบ (คละทุกวิชา · ' + picked.length + ' ข้อ)',
+      timeLimit: seconds,
       onFinish: renderHome
     });
   });
@@ -479,6 +522,7 @@ function startQuiz(cfg){
   currentQuiz = {
     questions: cfg.questions,
     answers: {}, // id -> selected letter
+    checked: {}, // id -> {correct, correctAnswer} — เฉลยที่เปิดดูแล้ว (โหมดฝึกทำเท่านั้น)
     index: 0,
     mode: cfg.mode,
     subject: cfg.subject,
@@ -514,19 +558,33 @@ function renderQuizQuestion(){
   card.appendChild(el('<div class="tiny">ข้อ ' + (quiz.index + 1) + ' / ' + quiz.questions.length + (q.subjectTitle ? ' · ' + q.subjectTitle : '') + '</div>'));
   card.appendChild(el('<div class="q-text">' + escapeHtml(q.q) + '</div>'));
 
+  var isPractice = quiz.mode === 'practice';
+  var checkedInfo = quiz.checked[q.id]; // {correct, correctAnswer} ถ้าเปิดเฉลยข้อนี้แล้ว (โหมดฝึกทำเท่านั้น)
+
   var optsWrap = el('<div></div>');
   ['A','B','C','D'].forEach(function(letter){
     if (!q.options[letter]) return;
     var opt = el('<div class="opt" data-letter="' + letter + '"><span class="letter">' + letter + '.</span><span>' + escapeHtml(q.options[letter]) + '</span></div>');
     if (quiz.answers[q.id] === letter) opt.classList.add('selected');
+    if (checkedInfo){
+      if (letter === checkedInfo.correctAnswer) opt.classList.add('correct');
+      else if (letter === quiz.answers[q.id]) opt.classList.add('wrong');
+    }
     opt.addEventListener('click', function(){
       quiz.answers[q.id] = letter;
-      optsWrap.querySelectorAll('.opt').forEach(function(o){ o.classList.remove('selected'); });
+      optsWrap.querySelectorAll('.opt').forEach(function(o){ o.classList.remove('selected','correct','wrong'); });
       opt.classList.add('selected');
+      if (isPractice) checkAnswerInline(q, letter, optsWrap, feedbackHolder);
     });
     optsWrap.appendChild(opt);
   });
   card.appendChild(optsWrap);
+
+  var feedbackHolder = el('<div></div>');
+  if (isPractice && checkedInfo){
+    renderAnswerFeedback(feedbackHolder, checkedInfo);
+  }
+  card.appendChild(feedbackHolder);
 
   var nav = el('<div class="quiz-nav"></div>');
   var prevBtn = el('<button class="btn btn-outline btn-sm" style="flex:1;">← ก่อนหน้า</button>');
@@ -584,6 +642,34 @@ function startOrUpdateTimer(){
   }
   if (quiz.timerId) clearTimeout(quiz.timerId);
   tick();
+}
+
+function checkAnswerInline(q, letter, optsWrap, feedbackHolder){
+  feedbackHolder.innerHTML = '<div class="tiny">กำลังตรวจ...</div>';
+  apiCall('checkAnswer', {username: session.username, sessionToken: session.sessionToken, id: q.id, selected: letter}).then(function(resp){
+    if (handleSessionInvalidIfNeeded(resp)) return;
+    if (!currentQuiz) return; // ผู้ใช้ออกจากหน้านี้ไปแล้วระหว่างรอผลตรวจ
+    if (!resp.ok){
+      feedbackHolder.innerHTML = '';
+      feedbackHolder.appendChild(el('<div class="msg msg-error">ตรวจคำตอบไม่สำเร็จ ลองใหม่อีกครั้ง</div>'));
+      return;
+    }
+    currentQuiz.checked[q.id] = {correct: resp.correct, correctAnswer: resp.correctAnswer};
+    optsWrap.querySelectorAll('.opt').forEach(function(o){
+      var l = o.getAttribute('data-letter');
+      o.classList.remove('correct','wrong');
+      if (l === resp.correctAnswer) o.classList.add('correct');
+      else if (l === letter && !resp.correct) o.classList.add('wrong');
+    });
+    renderAnswerFeedback(feedbackHolder, {correct: resp.correct, correctAnswer: resp.correctAnswer});
+  });
+}
+
+function renderAnswerFeedback(feedbackHolder, info){
+  feedbackHolder.innerHTML = '';
+  var cls = info.correct ? 'msg-success' : 'msg-error';
+  var text = info.correct ? '✅ ถูกต้อง!' : '❌ ไม่ถูกต้อง — เฉลยคือข้อ ' + info.correctAnswer;
+  feedbackHolder.appendChild(el('<div class="msg ' + cls + '" style="margin-top:12px;">' + text + '</div>'));
 }
 
 function escapeHtml(s){
