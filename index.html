@@ -101,7 +101,11 @@
 'use strict';
 
 /* ================= CONFIG ================= */
-var SERVER_URL = 'https://script.google.com/macros/s/AKfycbynNa4WJCT_HWEFIXSzWeGjLm58uO5tJeruYZ_Ry526S_JVY26oFvnz5gAEXFM_ygtDCw/exec';
+// เรียกผ่าน Netlify Function /api (same-origin) แทนการยิงตรงไปที่ Apps Script exec URL
+// เพราะ Apps Script Web App ไม่ส่ง CORS header กลับมาให้ fetch() จากเบราว์เซอร์อ่านผลได้
+// (เปิด URL ตรงๆ ในเบราว์เซอร์ใช้ได้ปกติ แต่ fetch()/XHR ข้าม origin จะโดนบล็อกเสมอ)
+// ตัว Netlify Function เองต่างหากที่เก็บ SERVER_URL จริงไว้ (ดู netlify/functions/api.mts)
+var API_PROXY_PATH = '/api';
 var EXPECTED_SERVER_VERSION = 'v2-get-transport-2026-08-20';
 var STORAGE_KEY = 'sjExamSession_v1';
 var MOCK_EXAM_SIZE = 60;
@@ -168,11 +172,9 @@ function debugSuffix(resp){
 }
 
 function apiCall(action, payload){
-  // ใช้ GET แทน POST เพราะ fetch ข้าม origin ไปหา Apps Script exec URL แบบ POST
-  // มักโดนเบราว์เซอร์บล็อกเรื่อง CORS (โดยเฉพาะตอนเปิดไฟล์ตรงๆ แบบ file://)
-  // ส่วน GET ธรรมดา (ไม่มี custom header) ผ่านได้ชัวร์กว่า ฝั่งเซิร์ฟเวอร์รองรับผ่าน doGet แล้ว
+  // เรียกผ่าน Netlify Function /api (same-origin) — ดู CONFIG ด้านบนว่าทำไม
   var body = Object.assign({action: action}, payload || {});
-  var url = SERVER_URL + '?action=' + encodeURIComponent(action) + '&payload=' + encodeURIComponent(JSON.stringify(body));
+  var url = API_PROXY_PATH + '?action=' + encodeURIComponent(action) + '&payload=' + encodeURIComponent(JSON.stringify(body));
   return fetch(url, { method: 'GET' })
     .then(function(res){ return res.json(); })
     .catch(function(err){ return {ok:false, error:'network_error', message:String(err)}; });
