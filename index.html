@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระบบฝึกข้อสอบเลื่อนฐานะ ส.อ. เป็น จ.ส.อ.</title>
+<style>
+  :root{
+    --primary:#1e3a5f;
+    --primary-dark:#10233b;
+    --primary-soft:#e7edf5;
+    --gold:#c9a24b;
+    --gold-dark:#a5822f;
+    --bg:#f4f6f9;
+    --card:#ffffff;
+    --text:#1b2530;
+    --muted:#5b6b7c;
+    --danger:#b3261e;
+    --danger-soft:#fdecea;
+    --success:#1e7a3d;
+    --success-soft:#e7f6ec;
+    --radius:14px;
+    --shadow:0 2px 10px rgba(16,35,59,.08);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Sarabun','Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);}
+  #app{min-height:100vh;display:flex;flex-direction:column;}
+  .topbar{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);}
+  .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;}
+  .topbar .brand .badge{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-weight:800;}
+  .topbar button{background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:.85rem;}
+  .topbar button:hover{background:rgba(255,255,255,.12);}
+  main{flex:1;display:flex;justify-content:center;padding:24px 16px 60px;}
+  .wrap{width:100%;max-width:640px;}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;margin-bottom:18px;}
+  h1{font-size:1.4rem;margin:0 0 6px;color:var(--primary-dark);}
+  h2{font-size:1.1rem;margin:0 0 14px;color:var(--primary-dark);}
+  p.sub{color:var(--muted);margin:0 0 20px;font-size:.92rem;}
+  label{display:block;font-size:.85rem;color:var(--muted);margin:14px 0 6px;}
+  input[type=text],input[type=password],input[type=number],select{
+    width:100%;padding:11px 13px;border:1px solid #cfd8e3;border-radius:10px;font-size:1rem;background:#fff;color:var(--text);
+  }
+  input:focus,select:focus{outline:2px solid var(--gold);border-color:var(--gold);}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:10px;padding:12px 20px;font-size:.98rem;font-weight:600;cursor:pointer;width:100%;margin-top:16px;}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-gold{background:var(--gold);color:var(--primary-dark);}
+  .btn-gold:hover{background:var(--gold-dark);color:#fff;}
+  .btn-outline{background:#fff;color:var(--primary);border:1.5px solid var(--primary);}
+  .btn-outline:hover{background:var(--primary-soft);}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .btn-sm{width:auto;padding:7px 14px;font-size:.82rem;margin-top:0;}
+  .row{display:flex;gap:10px;}
+  .row>*{flex:1;}
+  .link-btn{background:none;border:none;color:var(--primary);text-decoration:underline;cursor:pointer;font-size:.9rem;padding:0;}
+  .msg{padding:12px 14px;border-radius:10px;font-size:.88rem;margin-bottom:14px;}
+  .msg-error{background:var(--danger-soft);color:var(--danger);}
+  .msg-success{background:var(--success-soft);color:var(--success);}
+  .msg-info{background:var(--primary-soft);color:var(--primary-dark);}
+  .version-status{text-align:center;font-size:.78rem;color:var(--muted);margin-top:10px;}
+  .version-status.ok{color:var(--success);}
+  .version-status.bad{color:var(--danger);}
+  .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .menu-item{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 16px;text-align:center;cursor:pointer;border:2px solid transparent;transition:.15s;}
+  .menu-item:hover{border-color:var(--gold);}
+  .menu-item .icon{font-size:1.8rem;margin-bottom:8px;}
+  .menu-item .label{font-weight:700;color:var(--primary-dark);font-size:.95rem;}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+  .stat-box{background:var(--primary-soft);border-radius:10px;padding:14px 8px;text-align:center;}
+  .stat-box .num{font-size:1.3rem;font-weight:800;color:var(--primary-dark);}
+  .stat-box .lbl{font-size:.72rem;color:var(--muted);}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  th,td{padding:8px 6px;text-align:left;border-bottom:1px solid #e6eaf0;}
+  th{color:var(--muted);font-weight:600;}
+  .progress-bar{height:8px;background:#e6eaf0;border-radius:6px;overflow:hidden;margin-bottom:18px;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--primary));}
+  .q-text{font-size:1.05rem;font-weight:600;margin-bottom:18px;line-height:1.5;}
+  .opt{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1.5px solid #dde3ea;border-radius:10px;margin-bottom:10px;cursor:pointer;}
+  .opt:hover{border-color:var(--gold);}
+  .opt.selected{border-color:var(--primary);background:var(--primary-soft);}
+  .opt.correct{border-color:var(--success);background:var(--success-soft);}
+  .opt.wrong{border-color:var(--danger);background:var(--danger-soft);}
+  .opt .letter{font-weight:800;color:var(--primary);min-width:20px;}
+  .quiz-nav{display:flex;justify-content:space-between;gap:10px;margin-top:6px;}
+  .timer{font-weight:700;color:var(--gold-dark);}
+  .badge-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;}
+  .pill-pending{background:#fff4e0;color:#9a6b00;}
+  .pill-active{background:var(--success-soft);color:var(--success);}
+  .pill-suspended{background:var(--danger-soft);color:var(--danger);}
+  .admin-tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .admin-tabs button{flex:1;}
+  .tiny{font-size:.75rem;color:var(--muted);}
+  .footer-note{text-align:center;color:var(--muted);font-size:.78rem;padding:16px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= CONFIG ================= */
+var SERVER_URL = 'https://script.google.com/macros/s/AKfycbynNa4WJCT_HWEFIXSzWeGjLm58uO5tJeruYZ_Ry526S_JVY26oFvnz5gAEXFM_ygtDCw/exec';
+var EXPECTED_SERVER_VERSION = 'v1-initial-2026-08-20';
+var STORAGE_KEY = 'sjExamSession_v1';
+var MOCK_EXAM_SIZE = 60;
+var MOCK_EXAM_SECONDS = 60 * 60; // 60 นาที
+
+var DEMO_QUESTIONS = [{"id": "radio-0332", "subject": "radio", "subjectTitle": "วิชาการสื่อสารประเภทวิทยุ", "q": "ถ้าใช้งานชุดวิทยุ CNR-900T เป็นชุดติดตั้งยานยนต์ระยะไกล เครื่องรับ-ส่ง คู่ เรียกว่าชุดวิทยุใด", "options": {"A": "VRC - 742", "B": "VRC - 1460", "C": "VRC - 980", "D": "VRC – 750"}, "answer": "C"}, {"id": "radio-0155", "subject": "radio", "subjectTitle": "วิชาการสื่อสารประเภทวิทยุ", "q": "ชุดวิทยุ PRC-624กำลังออกอากาศต่ำกี่วัตต์", "options": {"A": "1 วัตต์", "B": "2 วัตต์", "C": "3 วัตต์", "D": "4 วัตต์"}, "answer": "A"}, {"id": "radio-0405", "subject": "radio", "subjectTitle": "วิชาการสื่อสารประเภทวิทยุ", "q": "เครื่องรับ-ส่งวิทยุ ของชุดวิทยุ VRC-2020 ใช้เครื่องรับ-ส่งใด", "options": {"A": "RT-2020", "B": "RT-2000", "C": "RT-2001", "D": "RT-2200"}, "answer": "C"}, {"id": "wire-0050", "subject": "wire", "subjectTitle": "วิชาการสื่อสารประเภทสาย", "q": "วิทยุถ่ายทอดรุ่น RL-432A มีย่านความถี่ใช้งานที่เท่าใด", "options": {"A": "1350 – 1850 GHz", "B": "1350 – 1850 MHz", "C": "760 – 960 MHz", "D": "610 – 960 MHz"}, "answer": "B"}, {"id": "wire-0075", "subject": "wire", "subjectTitle": "วิชาการสื่อสารประเภทสาย", "q": "ETE-M มีขนาดกี่คู่สาย", "options": {"A": "8 คู่สาย", "B": "10 คู่สาย", "C": "12 คู่สาย", "D": "36 คู่สาย"}, "answer": "D"}, {"id": "wire-0549", "subject": "wire", "subjectTitle": "วิชาการสื่อสารประเภทสาย", "q": "ข้อใดคือส่วนประกอบ ชุดเครื่องมือสร้างสาย TE - 21", "options": {"A": "เครื่องปีน LC -5", "B": "เข็มขัดประจำตัวและสายรัดนิรภัย LC - 23", "C": "ไขควง (ยาว 10 นิ้ว) TL - 106", "D": "กล่าวถูกทุกข้อที่กล่าวมา"}, "answer": "D"}, {"id": "signal_corps-0025", "subject": "signal_corps", "subjectTitle": "วิชาทหารสื่อสาร", "q": "ระยะ C. ของการปูแผ่นผ้าสัญญาณนั้นยาวเท่าใด", "options": {"A": "½ ของความยาวแผ่นผ้า", "B": "หนึ่งเท่าของความยาวแผ่นผ้า", "C": "2 เท่าของความยาวแผ่นผ้า", "D": "ไม่ใช่ระยะห่างแต่เป็นแผ่นผ้าหลัก"}, "answer": "B"}, {"id": "signal_corps-0094", "subject": "signal_corps", "subjectTitle": "วิชาทหารสื่อสาร", "q": "กองพันทหารสื่อสาร หน่วยบัญชาการสงครามพิเศษ ใช้ อจย. อะไร", "options": {"A": "11-333", "B": "11-444", "C": "11-555", "D": "11-666"}, "answer": "C"}, {"id": "signal_corps-0150", "subject": "signal_corps", "subjectTitle": "วิชาทหารสื่อสาร", "q": "ข้อใดไม่ใช่ คุณลักษณะในการใช้งานนกพิราบ ในการนำสาร", "options": {"A": "ต้องฝึกให้นำหลอดข่าวจากตำบลปล่อย กลับมาที่กรงเลี้ยง", "B": "ตามปกติจะเลี้ยงไว้ในกรงที่ส่วนหลัง และจ่ายให้กับส่วนหน้า", "C": "สามารถใส่กรงพิเศษแล้วโยนให้หน่วยที่อยู่โดดเดี่ยวโดยเครื่องบิน", "D": "ตามปกติจะเลี้ยงไว้ในกรงที่ส่วนหน้า และจ่ายให้กับส่วนหลัง"}, "answer": "D"}, {"id": "general-0008", "subject": "general", "subjectTitle": "วิชาทั่วไป", "q": "ไทยเสียกรุงศรีอยุธยา ครั้งที่ ๑ ให้พม่า ในสมัยใด", "options": {"A": "พระมหินทราธิราช", "B": "พระมหาธรรมราชา", "C": "พระเอกาทศรถ", "D": "พระเจ้าอู่ทอง"}, "answer": "A"}, {"id": "general-0065", "subject": "general", "subjectTitle": "วิชาทั่วไป", "q": "James works in a farm. He ________ trees by the pipe.", "options": {"A": "feeds", "B": "plants", "C": "plows", "D": "waters"}, "answer": "D"}, {"id": "general-0028", "subject": "general", "subjectTitle": "วิชาทั่วไป", "q": "อุดมการณ์ในด้านความรับผิดชอบต่อหน้าที่ หมายถึง", "options": {"A": "ความรับผิดชอบต่อ ภารกิจ ต่อเพื่อนร่วมงาน", "B": "ความรับผิดชอบต่อ ภารกิจ ต่อเพื่อนร่วมงาน ต่อผู้ใต้บังคับบัญชา", "C": "ความรับผิดชอบต่อ ภารกิจ ต่อเพื่อนร่วมงาน ต่อผู้ใต้บังคับบัญชา และประชาชน", "D": "ความรับผิดชอบ ภารกิจ เพื่อนร่วมงาน และประชาชน"}, "answer": "C"}, {"id": "logistics-0005", "subject": "logistics", "subjectTitle": "วิชาส่งกำลังบำรุงและซ่อมบำรุง", "q": "ปัจจัยสำคัญที่ทำให้การส่งกำลังบำรุงมีประสิทธิภาพและประสบผลสำเร็จ ได้แก่ข้อใด", "options": {"A": "คน เงิน สิ่งอุปกรณ์", "B": "เงิน สิ่งอุปกรณ์ ระบบที่เหมาะสม", "C": "คน เงิน สิ่งอุปกรณ์ ระบบที่เหมาะสม", "D": "คน เงิน ระบบที่เหมาะสม"}, "answer": "C"}, {"id": "logistics-0012", "subject": "logistics", "subjectTitle": "วิชาส่งกำลังบำรุงและซ่อมบำรุง", "q": "สายการซ่อมบำรุง สิ่งอุปกรณ์สายสื่อสาร (อจย./อสอ.) ของหน่วยในอัตรากองพล ของกองทัพภาคที่ ๒,๓,๔ ข้อใดถูกต้อง", "options": {"A": "หน่วยในอัตรากองพล – พัน.ส.พล./กรม สน. – บชร. – กคส.สส.", "B": "หน่วยในอัตรากองพล  - พัน.ส.พล. – บชร. – กซสอ.สส.", "C": "หน่วยในอัตรากองพล  - พัน.ส.พล./กรม สน. – บชร. – กบ.ทบ.", "D": "หน่วยในอัตรากองพล  - พัน.ส.พล./กรม สน. – บชร. – พัน.ส.ซบร. เขตหลัง /กซสอ.สส."}, "answer": "D"}, {"id": "logistics-0056", "subject": "logistics", "subjectTitle": "วิชาส่งกำลังบำรุงและซ่อมบำรุง", "q": "การเบิก คือ วีธีดำเนินการเสนอคำขอไปยังหน่วยสนับสนุนเพื่อขอรับสิ่งอุปกรณ์ ตามจำนวนที่ต้องการ แบ่งออกเป็น ๔ ประเภท คือ", "options": {"A": "การเบิกขั้นต้น การเบิกทดแทน การเบิกเพื่อรักษาระดับส่งกำลัง การเบิกพิเศษ", "B": "การเบิกขั้นต้น การเบิกทดแทน การเบิกเพื่อรักษาระดับส่งกำลัง การเบิกเร่งด่วน", "C": "การเบิกขั้นต้น การเบิกทดแทน การเบิกเพื่อรักษาระดับส่งกำลัง การเบิกนอกอัตรา", "D": "การเบิกขั้นต้น การเบิกทดแทน การเบิกเพื่อรักษาระดับส่งกำลัง การเบิกตามโครงการ"}, "answer": "A"}, {"id": "staff-0014", "subject": "staff", "subjectTitle": "วิชาฝ่ายอำนวยการ", "q": "สิ่งอุปกรณ์ประเภทที่ 3 สายพลาธิการ คือข้อใด", "options": {"A": "น้ำมันเชื้อเพลิงและน้ำมันอุปกรณ์", "B": "วัตถุระเบิด", "C": "เครื่องแต่งกาย", "D": "อาวุธประจำกาย"}, "answer": "A"}, {"id": "staff-0003", "subject": "staff", "subjectTitle": "วิชาฝ่ายอำนวยการ", "q": "ผู้ซึ่งมีอายุตั้งแต่สิบแปดปีบริบูรณ์ และยังไม่ถึงสามสิบปีบริบูรณ์ ซึ่งได้ลงบัญชีทหารกองเกินตามกฎหมาย ว่าด้วยการรับราชการทหารแล้ว เรียกว่าอะไร", "options": {"A": "ทหารกองหนุน", "B": "ทหารรอเรียกเกณฑ์", "C": "ทหารกองประจำการ", "D": "ทหารกองเกิน"}, "answer": "D"}, {"id": "staff-0008", "subject": "staff", "subjectTitle": "วิชาฝ่ายอำนวยการ", "q": "ทัณฑ์ที่จะลงแก่ทหารที่กระทำผิดต่อวินัยทหาร มีกี่ประการ อะไรบ้าง", "options": {"A": "4 ประการ ได้แก่  ภาคทัณฑ์ , ทัณฑกรรม , กักขัง และจำขัง", "B": "4 ประการ ได้แก่  ทัณฑกรรม , กัง, ขัง และจำขัง", "C": "5 ประการ ได้แก่  งดบำเหน็จ , ทัณฑกรรม , กัก, ขัง และจำขัง", "D": "5 ประการ ได้แก่  ภาคทัณฑ์ , ทัณฑกรรม , กัก, ขัง และจำขัง"}, "answer": "D"}, {"id": "computer-0024", "subject": "computer", "subjectTitle": "วิชาคอมพิวเตอร์", "q": "จากข้อมูลต่อไปนี้ “admin@signalschool.ac.th” เกี่ยวข้องกับบริการใดในเครือข่ายอินเตอร์เน็ต", "options": {"A": "Web", "B": "E-mail", "C": "News Group", "D": "Internet Phone"}, "answer": "B"}, {"id": "computer-0142", "subject": "computer", "subjectTitle": "วิชาคอมพิวเตอร์", "q": "Gmail คือบริการฟรีอีเมลที่ทำงานบนระบบใด", "options": {"A": "Search Engine", "B": "Firewall", "C": "Gmail", "D": "word"}, "answer": "A"}, {"id": "computer-0109", "subject": "computer", "subjectTitle": "วิชาคอมพิวเตอร์", "q": "ถ้ากระทำความผิดเกี่ยวกับการรักษาความมั่นคงปลอดภัยของประเทศ สาธารณะ เศรษฐกิจ (เจาะระบบความปลอดภัย) มีโทษใด", "options": {"A": "ปรับไม่เกิน 200,000บาท", "B": "จำคุก 1-7 ปี ปรับ 20,000-140,000 บาท", "C": "จำคุก 1-10 ปี ปรับ 20,000-200,000 บาท", "D": "จำคุก 3-10 ปี ปรับ 60,000-300,000 บาท"}, "answer": "B"}, {"id": "electronics-0008", "subject": "electronics", "subjectTitle": "วิชาไฟฟ้าและอิเล็กทรอนิกส์", "q": "ข้อใดต่อไปนี้ไม่ใช่ TRANSDUCER", "options": {"A": "Thermister", "B": "Photo Diode", "C": "Tachometer", "D": "Inductor"}, "answer": "D"}, {"id": "electronics-0106", "subject": "electronics", "subjectTitle": "วิชาไฟฟ้าและอิเล็กทรอนิกส์", "q": "จากรูป จงคำนวณหาแรงดันที่ตกคร่อม ตัวต้านทาน", "options": {"A": "5 V", "B": "0 V", "C": "4 V", "D": "2 V"}, "answer": "C"}, {"id": "electronics-0073", "subject": "electronics", "subjectTitle": "วิชาไฟฟ้าและอิเล็กทรอนิกส์", "q": "เครื่องขยายเสียงมีเอาท์พุทอิมพีแดนซ์ 8 โอห์ม ต้องต่อกับลำโพงอย่างไรจึงจะมีประสิทธิภาพสูงสุด", "options": {"A": "ลำโพงขนาด 8 นิ้ว", "B": "ลำโพงขนาด 8 โอห์ม", "C": "ลำโพงขนาด 8 วัตต์", "D": "ใช้ลำโพงต่อขนานกัน"}, "answer": "B"}, {"id": "correspondence-0004", "subject": "correspondence", "subjectTitle": "วิชาระเบียบงานสารบรรณ", "q": "การจ่าหน้าซองหนังสือที่ส่งโดยนำสาร ชื่อส่วนราชการและที่หนังสือของผู้ฝากอยู่บริเวณใด", "options": {"A": "มุมบนด้านซ้ายของซองข้างครุฑ", "B": "มุมบนด้านซ้ายของซองใต้ครุฑ", "C": "กึ่งกลางซอง", "D": "มุมล่างด้านซ้ายของซอง"}, "answer": "B"}, {"id": "correspondence-0008", "subject": "correspondence", "subjectTitle": "วิชาระเบียบงานสารบรรณ", "q": "การพิมพ์หนังสือภายนอก ส่วนราชการเจ้าขอเรื่องจะอยู่ที่ใด", "options": {"A": "มุมบนด้านขวาของหนังสือ", "B": "อยู่ในวงเล็บ", "C": "ประทับตราส่วนราชการกึ่งกลางเนื้อเรื่อง", "D": "มุมล่างด้านซ้ายของหนังสือ"}, "answer": "D"}, {"id": "correspondence-0021", "subject": "correspondence", "subjectTitle": "วิชาระเบียบงานสารบรรณ", "q": "ตราครุฑที่ใช้สาหรับพิมพ์ในระเบียบงานสารบรรณ มี 2 ขนาด ขนาดใหญ่ตัวครุฑสูงเท่าใด", "options": {"A": "6 เซนติเมตร", "B": "5 เซนติเมตร", "C": "4 เซนติเมตร", "D": "3 เซนติเมตร"}, "answer": "D"}, {"id": "protocol-0041", "subject": "protocol", "subjectTitle": "วิชาแบบธรรมเนียม", "q": "ข้อใดคือผลเสียของการที่ค่าเงินบาทแข็งตัว", "options": {"A": "เงินเฟ้อสูงขึ้น", "B": "สินค้านำเข้าราคาสูงขึ้น", "C": "ส่งออกสินค้าได้น้อยลง", "D": "น้ำมันราคาสูงขึ้น"}, "answer": "C"}, {"id": "protocol-0038", "subject": "protocol", "subjectTitle": "วิชาแบบธรรมเนียม", "q": "สามจังหวัดภาคใต้ของไทยที่เกิดความไม่สงบประกอบด้วยจังหวัดอะไรบ้าง", "options": {"A": "ยะลา  สงขลา  ปัตตานี", "B": "ยะลา  ตรัง  สตูล", "C": "ยะลา  ปัตตานี  นราธิวาส", "D": "ยะลา  สตูล  ปัตตานี"}, "answer": "C"}, {"id": "protocol-0004", "subject": "protocol", "subjectTitle": "วิชาแบบธรรมเนียม", "q": "ข้าราชการสังกัด ทบ. ถ้าหากประสงค์ลากิจ สามารถลากิจได้ไม่เกินปีละกี่วัน", "options": {"A": "ไม่เกิน 30 วันทำการ", "B": "30 วัน ลาเพิ่มได้อีกไม่เกิน 3 วันทำการ", "C": "ไม่เกิน 45 วันทำการ", "D": "30 วัน ลาเพิ่มได้อีกไม่เกิน 5 วันทำการ"}, "answer": "C"}];
+
+var SUBJECTS = [{"subject": "radio", "subjectTitle": "วิชาการสื่อสารประเภทวิทยุ", "count": 587}, {"subject": "wire", "subjectTitle": "วิชาการสื่อสารประเภทสาย", "count": 600}, {"subject": "signal_corps", "subjectTitle": "วิชาทหารสื่อสาร", "count": 210}, {"subject": "general", "subjectTitle": "วิชาทั่วไป", "count": 99}, {"subject": "logistics", "subjectTitle": "วิชาส่งกำลังบำรุงและซ่อมบำรุง", "count": 100}, {"subject": "staff", "subjectTitle": "วิชาฝ่ายอำนวยการ", "count": 25}, {"subject": "computer", "subjectTitle": "วิชาคอมพิวเตอร์", "count": 199}, {"subject": "electronics", "subjectTitle": "วิชาไฟฟ้าและอิเล็กทรอนิกส์", "count": 107}, {"subject": "correspondence", "subjectTitle": "วิชาระเบียบงานสารบรรณ", "count": 25}, {"subject": "protocol", "subjectTitle": "วิชาแบบธรรมเนียม", "count": 49}];
+
+/* ================= STATE ================= */
+var session = null; // {username, sessionToken}
+var app = document.getElementById('app');
+var currentQuiz = null; // {questions, answers, index, mode, subject, startedAt, timeLimit}
+var adminKey = null;
+
+/* ================= HELPERS ================= */
+function el(html){
+  var t = document.createElement('template');
+  t.innerHTML = html.trim();
+  return t.content.firstElementChild;
+}
+function fmtDate(v){
+  try{
+    var d = new Date(v);
+    if (isNaN(d.getTime())) return String(v);
+    return d.toLocaleString('th-TH', {dateStyle:'short', timeStyle:'short'});
+  }catch(e){ return String(v); }
+}
+function shuffle(arr){
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+function subjectTitle(code){
+  for (var i=0;i<SUBJECTS.length;i++){ if (SUBJECTS[i].subject === code) return SUBJECTS[i].subjectTitle; }
+  return code;
+}
+
+function loadSession(){
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) session = JSON.parse(raw);
+  }catch(e){ session = null; }
+}
+function saveSession(s){
+  session = s;
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }catch(e){}
+}
+function clearSession(){
+  session = null;
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+}
+
+function apiCall(action, payload){
+  var body = Object.assign({action: action}, payload || {});
+  return fetch(SERVER_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify(body)
+  }).then(function(res){ return res.json(); })
+    .catch(function(err){ return {ok:false, error:'network_error', message:String(err)}; });
+}
+
+// เรียกก่อนทุก action ที่ต้องใช้ session — ถ้า session_invalid ให้เตะกลับหน้า login ทันที
+function handleSessionInvalidIfNeeded(resp){
+  if (resp && resp.ok === false && resp.error === 'session_invalid'){
+    clearSession();
+    renderLogin({kicked:true});
+    return true; // ผู้เรียกต้อง return ทันทีเมื่อค่านี้เป็น true ห้ามทำงานต่อ (กัน double-render)
+  }
+  return false;
+}
+
+/* ================= VERSION CHECK ================= */
+function checkVersionBadge(targetEl){
+  apiCall('ping', {}).then(function(resp){
+    if (!targetEl.isConnected) return;
+    if (resp && resp.ok && resp.serverVersion === EXPECTED_SERVER_VERSION){
+      targetEl.textContent = '✅ เซิร์ฟเวอร์เป็นโค้ดล่าสุด';
+      targetEl.className = 'version-status ok';
+    } else if (resp && resp.ok){
+      targetEl.textContent = '⚠️ พบเวอร์ชันเซิร์ฟเวอร์ไม่ตรงกับที่ไคลเอนต์คาดไว้ (server: ' + resp.serverVersion + ')';
+      targetEl.className = 'version-status bad';
+    } else {
+      targetEl.textContent = '❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ในขณะนี้';
+      targetEl.className = 'version-status bad';
+    }
+  });
+}
+
+/* ================= LOGIN / REGISTER ================= */
+function renderLogin(opts){
+  opts = opts || {};
+  app.innerHTML = '';
+  app.appendChild(el(
+    '<div class="topbar"><div class="brand"><span class="badge">จสอ</span> ระบบฝึกข้อสอบเลื่อนฐานะ ส.อ. → จ.ส.อ.</div></div>'
+  ));
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+
+  var card = el('<div class="card"></div>');
+  card.appendChild(el('<h1>เข้าสู่ระบบ</h1>'));
+  card.appendChild(el('<p class="sub">สำหรับผู้สมัครสมาชิกและได้รับการอนุมัติแล้ว</p>'));
+
+  if (opts.kicked){
+    card.appendChild(el('<div class="msg msg-error">บัญชีนี้ถูกเข้าสู่ระบบจากอุปกรณ์อื่น หรือเซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่</div>'));
+  }
+  if (opts.message){
+    card.appendChild(el('<div class="msg ' + (opts.messageType === 'success' ? 'msg-success' : 'msg-error') + '">' + opts.message + '</div>'));
+  }
+
+  var form = el('<form></form>');
+  form.appendChild(el('<label>ชื่อผู้ใช้</label>'));
+  var uInput = el('<input type="text" autocomplete="username" required>');
+  form.appendChild(uInput);
+  form.appendChild(el('<label>รหัสผ่าน</label>'));
+  var pInput = el('<input type="password" autocomplete="current-password" required>');
+  form.appendChild(pInput);
+  var submitBtn = el('<button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>');
+  form.appendChild(submitBtn);
+  form.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'กำลังเข้าสู่ระบบ...';
+    apiCall('login', {username: uInput.value.trim(), password: pInput.value, device: navigator.userAgent}).then(function(resp){
+      if (resp.ok){
+        saveSession({username: resp.username, sessionToken: resp.sessionToken});
+        renderHome();
+        return;
+      }
+      var msg = 'เข้าสู่ระบบไม่สำเร็จ';
+      if (resp.error === 'invalid_credentials') msg = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+      else if (resp.error === 'pending_approval') msg = 'บัญชีของคุณกำลังรอการอนุมัติจากแอดมิน กรุณารอการติดต่อกลับ';
+      else if (resp.error === 'suspended') msg = 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อแอดมิน';
+      else if (resp.error === 'network_error') msg = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่อีกครั้ง';
+      renderLogin({message: msg});
+    });
+  });
+  card.appendChild(form);
+
+  var links = el('<div style="margin-top:16px;display:flex;justify-content:space-between;"></div>');
+  var regBtn = el('<button class="link-btn">สมัครสมาชิกใหม่</button>');
+  regBtn.addEventListener('click', function(){ renderRegister(); });
+  var demoBtn = el('<button class="link-btn">ทดลองทำโจทย์ฟรี (ไม่ต้องสมัคร)</button>');
+  demoBtn.addEventListener('click', function(){ renderDemoPicker(); });
+  links.appendChild(regBtn);
+  links.appendChild(demoBtn);
+  card.appendChild(links);
+
+  var versionEl = el('<div class="version-status">กำลังตรวจสอบสถานะเซิร์ฟเวอร์...</div>');
+  card.appendChild(versionEl);
+
+  var adminLink = el('<div style="text-align:center;margin-top:10px;"><button class="link-btn tiny">⚙️ สำหรับผู้ดูแลระบบ</button></div>');
+  adminLink.querySelector('button').addEventListener('click', function(){ renderAdminLogin(); });
+  card.appendChild(adminLink);
+
+  wrap.appendChild(card);
+  app.appendChild(main);
+  checkVersionBadge(versionEl);
+}
+
+function renderRegister(){
+  app.innerHTML = '';
+  app.appendChild(el('<div class="topbar"><div class="brand"><span class="badge">จสอ</span> สมัครสมาชิก</div></div>'));
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+  var card = el('<div class="card"></div>');
+  card.appendChild(el('<h1>สมัครสมาชิกใหม่</h1>'));
+  card.appendChild(el('<p class="sub">สมัครแล้วต้องรอแอดมินอนุมัติก่อนจึงจะเข้าใช้งานได้</p>'));
+
+  var msgHolder = el('<div></div>');
+  card.appendChild(msgHolder);
+
+  var form = el('<form></form>');
+  form.appendChild(el('<label>ชื่อผู้ใช้ (อย่างน้อย 3 ตัวอักษร)</label>'));
+  var uInput = el('<input type="text" required minlength="3">');
+  form.appendChild(uInput);
+  form.appendChild(el('<label>รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>'));
+  var pInput = el('<input type="password" required minlength="6">');
+  form.appendChild(pInput);
+  form.appendChild(el('<label>ยืนยันรหัสผ่าน</label>'));
+  var p2Input = el('<input type="password" required minlength="6">');
+  form.appendChild(p2Input);
+  var submitBtn = el('<button type="submit" class="btn btn-primary">สมัครสมาชิก</button>');
+  form.appendChild(submitBtn);
+
+  form.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    msgHolder.innerHTML = '';
+    if (pInput.value !== p2Input.value){
+      msgHolder.appendChild(el('<div class="msg msg-error">รหัสผ่านทั้งสองช่องไม่ตรงกัน</div>'));
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'กำลังสมัคร...';
+    apiCall('register', {username: uInput.value.trim(), password: pInput.value}).then(function(resp){
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'สมัครสมาชิก';
+      if (resp.ok){
+        renderLogin({message: 'สมัครสมาชิกสำเร็จ กรุณารอแอดมินอนุมัติก่อนเข้าสู่ระบบ', messageType:'success'});
+        return;
+      }
+      var msg = 'สมัครสมาชิกไม่สำเร็จ';
+      if (resp.error === 'username_taken') msg = 'ชื่อผู้ใช้นี้มีคนใช้แล้ว';
+      else if (resp.error === 'invalid_username') msg = 'ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร';
+      else if (resp.error === 'invalid_password') msg = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+      msgHolder.innerHTML = '';
+      msgHolder.appendChild(el('<div class="msg msg-error">' + msg + '</div>'));
+    });
+  });
+  card.appendChild(form);
+
+  var back = el('<div style="margin-top:16px;"><button class="link-btn">← กลับไปเข้าสู่ระบบ</button></div>');
+  back.querySelector('button').addEventListener('click', function(){ renderLogin(); });
+  card.appendChild(back);
+
+  wrap.appendChild(card);
+  app.appendChild(main);
+}
+
+/* ================= DEMO MODE ================= */
+function renderDemoPicker(){
+  app.innerHTML = '';
+  app.appendChild(el('<div class="topbar"><div class="brand"><span class="badge">จสอ</span> ทดลองทำโจทย์ฟรี</div></div>'));
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+  var card = el('<div class="card"></div>');
+  card.appendChild(el('<h1>โหมดทดลอง</h1>'));
+  card.appendChild(el('<p class="sub">คำถามตัวอย่าง ' + DEMO_QUESTIONS.length + ' ข้อ (ฟรี ไม่ต้องสมัครสมาชิก) — สมัครสมาชิกเพื่อเข้าถึงคลังข้อสอบเต็ม 2,000 กว่าข้อ</p>'));
+  var startBtn = el('<button class="btn btn-gold">เริ่มทำโจทย์ตัวอย่าง</button>');
+  startBtn.addEventListener('click', function(){
+    startQuiz({
+      questions: shuffle(DEMO_QUESTIONS),
+      mode: 'demo',
+      subjectLabel: 'ตัวอย่างฟรี',
+      timeLimit: null,
+      onFinish: function(){ renderDemoPicker(); }
+    });
+  });
+  card.appendChild(startBtn);
+  var back = el('<div style="margin-top:14px;"><button class="link-btn">← กลับไปเข้าสู่ระบบ</button></div>');
+  back.querySelector('button').addEventListener('click', function(){ renderLogin(); });
+  card.appendChild(back);
+  wrap.appendChild(card);
+  app.appendChild(main);
+}
+
+/* ================= HOME (after login) ================= */
+function renderHome(){
+  app.innerHTML = '';
+  app.appendChild(el(
+    '<div class="topbar"><div class="brand"><span class="badge">จสอ</span> สวัสดี ' + session.username + '</div>' +
+    '<button id="logoutBtn">ออกจากระบบ</button></div>'
+  ));
+  app.querySelector('#logoutBtn').addEventListener('click', function(){
+    apiCall('logout', {username: session.username, sessionToken: session.sessionToken}).then(function(){
+      clearSession();
+      renderLogin();
+    });
+  });
+
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+  wrap.appendChild(el('<div class="card"><h1>เมนูหลัก</h1><p class="sub">เลือกโหมดที่ต้องการฝึกทำข้อสอบ</p></div>'));
+
+  var grid = el('<div class="menu-grid"></div>');
+  var items = [
+    {icon:'📝', label:'ฝึกทำรายวิชา', fn: renderSubjectPicker},
+    {icon:'⏱️', label:'จำลองการสอบ (' + MOCK_EXAM_SIZE + ' ข้อ)', fn: startMockExam},
+    {icon:'📊', label:'ประวัติคะแนนของฉัน', fn: renderHistory},
+    {icon:'🏠', label:'กลับหน้าหลัก', fn: renderHome},
+  ];
+  items.forEach(function(it){
+    var card = el('<div class="menu-item"><div class="icon">' + it.icon + '</div><div class="label">' + it.label + '</div></div>');
+    card.addEventListener('click', it.fn);
+    grid.appendChild(card);
+  });
+  wrap.appendChild(grid);
+  app.appendChild(main);
+  app.appendChild(el('<div class="footer-note">ระบบข้อสอบเลื่อนฐานะ ส.อ. → จ.ส.อ. · ใช้เพื่อฝึกฝนส่วนบุคคลเท่านั้น</div>'));
+}
+
+/* ================= SUBJECT PICKER (practice mode) ================= */
+function renderSubjectPicker(){
+  app.innerHTML = '';
+  app.appendChild(el('<div class="topbar"><div class="brand"><span class="badge">จสอ</span> เลือกวิชาฝึกทำ</div><button id="backBtn">กลับ</button></div>'));
+  app.querySelector('#backBtn').addEventListener('click', renderHome);
+
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+  var card = el('<div class="card"></div>');
+  card.appendChild(el('<h1>ฝึกทำรายวิชา</h1><p class="sub">เลือกวิชาและจำนวนข้อที่ต้องการฝึก</p>'));
+
+  var select = el('<select></select>');
+  SUBJECTS.forEach(function(s){
+    select.appendChild(el('<option value="' + s.subject + '">' + s.subjectTitle + ' (' + s.count + ' ข้อ)</option>'));
+  });
+  card.appendChild(el('<label>วิชา</label>'));
+  card.appendChild(select);
+
+  var countSelect = el('<select><option value="10">10 ข้อ</option><option value="20" selected>20 ข้อ</option><option value="30">30 ข้อ</option><option value="all">ทั้งหมด</option></select>');
+  card.appendChild(el('<label>จำนวนข้อ</label>'));
+  card.appendChild(countSelect);
+
+  var msgHolder = el('<div></div>');
+  card.appendChild(msgHolder);
+
+  var startBtn = el('<button class="btn btn-primary">เริ่มทำโจทย์</button>');
+  startBtn.addEventListener('click', function(){
+    startBtn.disabled = true;
+    startBtn.textContent = 'กำลังโหลดข้อสอบ...';
+    apiCall('getQuestions', {username: session.username, sessionToken: session.sessionToken, subject: select.value}).then(function(resp){
+      if (handleSessionInvalidIfNeeded(resp)) return;
+      startBtn.disabled = false;
+      startBtn.textContent = 'เริ่มทำโจทย์';
+      if (!resp.ok){
+        msgHolder.innerHTML = '';
+        msgHolder.appendChild(el('<div class="msg msg-error">โหลดข้อสอบไม่สำเร็จ กรุณาลองใหม่</div>'));
+        return;
+      }
+      var pool = shuffle(resp.questions);
+      var n = countSelect.value === 'all' ? pool.length : Math.min(parseInt(countSelect.value, 10), pool.length);
+      startQuiz({
+        questions: pool.slice(0, n),
+        mode: 'practice',
+        subject: select.value,
+        subjectLabel: subjectTitle(select.value),
+        timeLimit: null,
+        onFinish: renderHome
+      });
+    });
+  });
+  card.appendChild(startBtn);
+  wrap.appendChild(card);
+  app.appendChild(main);
+}
+
+function startMockExam(){
+  app.innerHTML = '';
+  app.appendChild(el('<div class="topbar"><div class="brand"><span class="badge">จสอ</span> กำลังเตรียมชุดข้อสอบจำลอง...</div></div>'));
+  apiCall('getQuestions', {username: session.username, sessionToken: session.sessionToken, subject: 'all'}).then(function(resp){
+    if (handleSessionInvalidIfNeeded(resp)) return;
+    if (!resp.ok){ renderHome(); return; }
+    // สุ่มแบบกระจายตามสัดส่วนของแต่ละวิชาคร่าวๆ โดยสับทั้งหมดแล้วตัด MOCK_EXAM_SIZE ข้อแรก
+    var pool = shuffle(resp.questions);
+    var picked = pool.slice(0, Math.min(MOCK_EXAM_SIZE, pool.length));
+    startQuiz({
+      questions: picked,
+      mode: 'mock',
+      subject: 'mixed',
+      subjectLabel: 'จำลองการสอบ (คละทุกวิชา)',
+      timeLimit: MOCK_EXAM_SECONDS,
+      onFinish: renderHome
+    });
+  });
+}
+
+/* ================= QUIZ ENGINE ================= */
+function startQuiz(cfg){
+  currentQuiz = {
+    questions: cfg.questions,
+    answers: {}, // id -> selected letter
+    index: 0,
+    mode: cfg.mode,
+    subject: cfg.subject,
+    subjectLabel: cfg.subjectLabel,
+    timeLimit: cfg.timeLimit,
+    startedAt: Date.now(),
+    onFinish: cfg.onFinish,
+    timerId: null,
+  };
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion(){
+  var quiz = currentQuiz;
+  if (!quiz) return;
+  var q = quiz.questions[quiz.index];
+
+  app.innerHTML = '';
+  var topbarHtml = '<div class="topbar"><div class="brand"><span class="badge">จสอ</span> ' + quiz.subjectLabel + '</div>';
+  if (quiz.timeLimit){
+    topbarHtml += '<div class="timer" id="timerDisplay">--:--</div>';
+  }
+  topbarHtml += '</div>';
+  app.appendChild(el(topbarHtml));
+
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+
+  var pct = Math.round((quiz.index / quiz.questions.length) * 100);
+  wrap.appendChild(el('<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div>'));
+
+  var card = el('<div class="card"></div>');
+  card.appendChild(el('<div class="tiny">ข้อ ' + (quiz.index + 1) + ' / ' + quiz.questions.length + (q.subjectTitle ? ' · ' + q.subjectTitle : '') + '</div>'));
+  card.appendChild(el('<div class="q-text">' + escapeHtml(q.q) + '</div>'));
+
+  var optsWrap = el('<div></div>');
+  ['A','B','C','D'].forEach(function(letter){
+    if (!q.options[letter]) return;
+    var opt = el('<div class="opt" data-letter="' + letter + '"><span class="letter">' + letter + '.</span><span>' + escapeHtml(q.options[letter]) + '</span></div>');
+    if (quiz.answers[q.id] === letter) opt.classList.add('selected');
+    opt.addEventListener('click', function(){
+      quiz.answers[q.id] = letter;
+      optsWrap.querySelectorAll('.opt').forEach(function(o){ o.classList.remove('selected'); });
+      opt.classList.add('selected');
+    });
+    optsWrap.appendChild(opt);
+  });
+  card.appendChild(optsWrap);
+
+  var nav = el('<div class="quiz-nav"></div>');
+  var prevBtn = el('<button class="btn btn-outline btn-sm" style="flex:1;">← ก่อนหน้า</button>');
+  prevBtn.disabled = quiz.index === 0;
+  prevBtn.addEventListener('click', function(){ quiz.index--; renderQuizQuestion(); });
+  nav.appendChild(prevBtn);
+
+  if (quiz.index < quiz.questions.length - 1){
+    var nextBtn = el('<button class="btn btn-primary btn-sm" style="flex:1;">ถัดไป →</button>');
+    nextBtn.addEventListener('click', function(){ quiz.index++; renderQuizQuestion(); });
+    nav.appendChild(nextBtn);
+  } else {
+    var submitBtn = el('<button class="btn btn-gold btn-sm" style="flex:1;">ส่งคำตอบ</button>');
+    submitBtn.addEventListener('click', function(){ finishQuiz(); });
+    nav.appendChild(submitBtn);
+  }
+  card.appendChild(nav);
+
+  var jumpWrap = el('<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;"></div>');
+  quiz.questions.forEach(function(qq, i){
+    var dot = el('<button class="btn-sm" style="width:34px;height:34px;padding:0;border-radius:8px;border:1.5px solid #dde3ea;background:' +
+      (i === quiz.index ? 'var(--primary)' : (quiz.answers[qq.id] ? 'var(--primary-soft)' : '#fff')) +
+      ';color:' + (i === quiz.index ? '#fff' : 'var(--text)') + ';cursor:pointer;font-size:.75rem;">' + (i + 1) + '</button>');
+    dot.addEventListener('click', function(){ quiz.index = i; renderQuizQuestion(); });
+    jumpWrap.appendChild(dot);
+  });
+  card.appendChild(jumpWrap);
+
+  wrap.appendChild(card);
+  app.appendChild(main);
+
+  if (quiz.timeLimit){
+    startOrUpdateTimer();
+  }
+}
+
+function startOrUpdateTimer(){
+  var quiz = currentQuiz;
+  if (!quiz) return;
+  function tick(){
+    if (!currentQuiz || currentQuiz !== quiz) return;
+    var elapsed = Math.floor((Date.now() - quiz.startedAt) / 1000);
+    var remaining = quiz.timeLimit - elapsed;
+    var display = document.getElementById('timerDisplay');
+    if (remaining <= 0){
+      if (display) display.textContent = '00:00';
+      finishQuiz();
+      return;
+    }
+    if (display){
+      var m = Math.floor(remaining / 60), s = remaining % 60;
+      display.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+    quiz.timerId = setTimeout(tick, 1000);
+  }
+  if (quiz.timerId) clearTimeout(quiz.timerId);
+  tick();
+}
+
+function escapeHtml(s){
+  var d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+function finishQuiz(){
+  var quiz = currentQuiz;
+  if (!quiz) return;
+  if (quiz.timerId) clearTimeout(quiz.timerId);
+
+  var durationSeconds = Math.floor((Date.now() - quiz.startedAt) / 1000);
+  var answersPayload = quiz.questions.map(function(q){ return {id: q.id, selected: quiz.answers[q.id] || ''}; });
+
+  if (quiz.mode === 'demo'){
+    // ตรวจในเครื่องเลย เพราะเป็นคำถามตัวอย่างที่มีเฉลยฝังอยู่แล้ว ไม่ต้องผ่านเซิร์ฟเวอร์
+    var score = 0;
+    var results = quiz.questions.map(function(q){
+      var selected = quiz.answers[q.id] || '';
+      var correct = selected === q.answer;
+      if (correct) score++;
+      return {id:q.id, q:q.q, options:q.options, selected: selected, correctAnswer: q.answer, correct: correct};
+    });
+    renderResult({score: score, total: quiz.questions.length, percentage: Math.round((score/quiz.questions.length)*10000)/100, results: results}, quiz);
+    return;
+  }
+
+  apiCall('submitAttempt', {
+    username: session.username, sessionToken: session.sessionToken,
+    subject: quiz.subject, answers: answersPayload, durationSeconds: durationSeconds
+  }).then(function(resp){
+    if (handleSessionInvalidIfNeeded(resp)) return;
+    if (!resp.ok){
+      alert('ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่');
+      return;
+    }
+    // แนบข้อความคำถาม/ตัวเลือกจาก quiz เดิม เพื่อแสดงรีวิวได้ (server ส่งกลับแค่ id/selected/correctAnswer/correct)
+    var byId = {};
+    quiz.questions.forEach(function(q){ byId[q.id] = q; });
+    resp.results.forEach(function(r){
+      var q = byId[r.id];
+      if (q){ r.q = q.q; r.options = q.options; }
+    });
+    renderResult(resp, quiz);
+  });
+}
+
+/* ================= RESULT ================= */
+function renderResult(result, quiz){
+  currentQuiz = null;
+  app.innerHTML = '';
+  app.appendChild(el('<div class="topbar"><div class="brand"><span class="badge">จสอ</span> ผลคะแนน</div></div>'));
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+
+  var card = el('<div class="card" style="text-align:center;"></div>');
+  card.appendChild(el('<h1>สรุปผลคะแนน</h1>'));
+  card.appendChild(el('<div style="font-size:2.4rem;font-weight:800;color:var(--primary-dark);">' + result.score + ' / ' + result.total + '</div>'));
+  card.appendChild(el('<div style="color:var(--gold-dark);font-weight:700;font-size:1.1rem;margin-bottom:10px;">' + result.percentage + '%</div>'));
+  wrap.appendChild(card);
+
+  var reviewCard = el('<div class="card"><h2>เฉลยรายข้อ</h2></div>');
+  (result.results || []).forEach(function(r, i){
+    var block = el('<div style="margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #eef1f5;"></div>');
+    block.appendChild(el('<div class="tiny">ข้อ ' + (i+1) + '</div>'));
+    block.appendChild(el('<div class="q-text" style="font-size:.95rem;">' + escapeHtml(r.q || '') + '</div>'));
+    var opts = r.options || {};
+    Object.keys(opts).forEach(function(letter){
+      var cls = 'opt';
+      if (letter === r.correctAnswer) cls += ' correct';
+      else if (letter === r.selected && !r.correct) cls += ' wrong';
+      reviewCard.querySelectorAll; // no-op keep linter quiet
+      block.appendChild(el('<div class="' + cls + '"><span class="letter">' + letter + '.</span><span>' + escapeHtml(opts[letter]) + '</span></div>'));
+    });
+    if (!r.selected){
+      block.appendChild(el('<div class="tiny" style="color:var(--danger);">ไม่ได้ตอบข้อนี้</div>'));
+    }
+    reviewCard.appendChild(block);
+  });
+  wrap.appendChild(reviewCard);
+
+  var doneBtn = el('<button class="btn btn-primary">เสร็จสิ้น</button>');
+  doneBtn.addEventListener('click', function(){
+    var fn = (quiz && quiz.onFinish) || renderHome;
+    fn();
+  });
+  wrap.appendChild(doneBtn);
+
+  app.appendChild(main);
+}
+
+/* ================= HISTORY ================= */
+function renderHistory(){
+  app.innerHTML = '';
+  app.appendChild(el('<div class="topbar"><div class="brand"><span class="badge">จสอ</span> ประวัติคะแนนของฉัน</div><button id="backBtn">กลับ</button></div>'));
+  app.querySelector('#backBtn').addEventListener('click', renderHome);
+
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+  var card = el('<div class="card"><h1>ประวัติคะแนนของฉัน</h1><p class="sub">กำลังโหลด...</p></div>');
+  wrap.appendChild(card);
+  app.appendChild(main);
+
+  apiCall('getHistory', {username: session.username, sessionToken: session.sessionToken}).then(function(resp){
+    if (handleSessionInvalidIfNeeded(resp)) return;
+    card.innerHTML = '';
+    card.appendChild(el('<h1>ประวัติคะแนนของฉัน</h1>'));
+    if (!resp.ok){
+      card.appendChild(el('<div class="msg msg-error">โหลดประวัติไม่สำเร็จ</div>'));
+      return;
+    }
+    var s = resp.stats;
+    var stats = el('<div class="stat-grid"></div>');
+    stats.appendChild(el('<div class="stat-box"><div class="num">' + s.count + '</div><div class="lbl">จำนวนครั้ง</div></div>'));
+    stats.appendChild(el('<div class="stat-box"><div class="num">' + s.best + '%</div><div class="lbl">คะแนนสูงสุด</div></div>'));
+    stats.appendChild(el('<div class="stat-box"><div class="num">' + (s.latest === null ? '-' : s.latest + '%') + '</div><div class="lbl">คะแนนล่าสุด</div></div>'));
+    stats.appendChild(el('<div class="stat-box"><div class="num">' + s.average + '%</div><div class="lbl">คะแนนเฉลี่ย</div></div>'));
+    card.appendChild(stats);
+
+    if (resp.history.length === 0){
+      card.appendChild(el('<p class="sub">ยังไม่มีประวัติการสอบ ลองไปฝึกทำข้อสอบดูก่อนนะ</p>'));
+    } else {
+      var table = el('<table><thead><tr><th>วันที่</th><th>วิชา</th><th>คะแนน</th><th>%</th></tr></thead><tbody></tbody></table>');
+      var tbody = table.querySelector('tbody');
+      resp.history.forEach(function(h){
+        tbody.appendChild(el('<tr><td>' + fmtDate(h.timestamp) + '</td><td>' + escapeHtml(subjectTitle(h.subject)) + '</td><td>' + h.score + '/' + h.total + '</td><td>' + h.percentage + '%</td></tr>'));
+      });
+      card.appendChild(table);
+    }
+  });
+}
+
+/* ================= ADMIN ================= */
+function renderAdminLogin(){
+  app.innerHTML = '';
+  app.appendChild(el('<div class="topbar"><div class="brand"><span class="badge">จสอ</span> ผู้ดูแลระบบ</div></div>'));
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+  var card = el('<div class="card"><h1>เข้าสู่ระบบผู้ดูแล</h1><p class="sub">กรอกรหัสลับผู้ดูแลระบบ</p></div>');
+  var msgHolder = el('<div></div>');
+  card.appendChild(msgHolder);
+  card.appendChild(el('<label>Admin Key</label>'));
+  var input = el('<input type="password">');
+  card.appendChild(input);
+  var btn = el('<button class="btn btn-primary">เข้าสู่ระบบ</button>');
+  btn.addEventListener('click', function(){
+    adminKey = input.value;
+    apiCall('adminListUsers', {adminKey: adminKey}).then(function(resp){
+      if (!resp.ok){
+        adminKey = null;
+        msgHolder.innerHTML = '';
+        msgHolder.appendChild(el('<div class="msg msg-error">รหัสลับไม่ถูกต้อง</div>'));
+        return;
+      }
+      renderAdminPanel('users', resp.users);
+    });
+  });
+  card.appendChild(btn);
+  var back = el('<div style="margin-top:14px;"><button class="link-btn">← กลับไปเข้าสู่ระบบ</button></div>');
+  back.querySelector('button').addEventListener('click', function(){ renderLogin(); });
+  card.appendChild(back);
+  wrap.appendChild(card);
+  app.appendChild(main);
+}
+
+function renderAdminPanel(tab, preloadedData){
+  app.innerHTML = '';
+  app.appendChild(el('<div class="topbar"><div class="brand"><span class="badge">จสอ</span> แผงผู้ดูแลระบบ</div><button id="logoutAdminBtn">ออก</button></div>'));
+  app.querySelector('#logoutAdminBtn').addEventListener('click', function(){ adminKey = null; renderLogin(); });
+
+  var main = el('<main><div class="wrap"></div></main>');
+  var wrap = main.querySelector('.wrap');
+
+  var tabs = el('<div class="admin-tabs"></div>');
+  var usersTabBtn = el('<button class="btn ' + (tab==='users'?'btn-primary':'btn-outline') + ' btn-sm">ผู้ใช้งาน</button>');
+  var attemptsTabBtn = el('<button class="btn ' + (tab==='attempts'?'btn-primary':'btn-outline') + ' btn-sm">ประวัติคะแนน</button>');
+  usersTabBtn.addEventListener('click', function(){ loadAdminUsers(); });
+  attemptsTabBtn.addEventListener('click', function(){ loadAdminAttempts(); });
+  tabs.appendChild(usersTabBtn); tabs.appendChild(attemptsTabBtn);
+  wrap.appendChild(tabs);
+
+  var content = el('<div class="card"></div>');
+  wrap.appendChild(content);
+  app.appendChild(main);
+
+  if (tab === 'users'){
+    renderAdminUsersTable(content, preloadedData || []);
+  } else {
+    renderAdminAttemptsTable(content, preloadedData || []);
+  }
+}
+
+function loadAdminUsers(){
+  apiCall('adminListUsers', {adminKey: adminKey}).then(function(resp){
+    if (!resp.ok){ renderAdminLogin(); return; }
+    renderAdminPanel('users', resp.users);
+  });
+}
+function loadAdminAttempts(){
+  apiCall('adminListAttempts', {adminKey: adminKey}).then(function(resp){
+    if (!resp.ok){ renderAdminLogin(); return; }
+    renderAdminPanel('attempts', resp.attempts);
+  });
+}
+
+function renderAdminUsersTable(content, users){
+  content.innerHTML = '';
+  content.appendChild(el('<h2>รายชื่อผู้ใช้ (' + users.length + ')</h2>'));
+  if (users.length === 0){
+    content.appendChild(el('<p class="sub">ยังไม่มีผู้สมัครสมาชิก</p>'));
+    return;
+  }
+  var table = el('<table><thead><tr><th>ผู้ใช้</th><th>สถานะ</th><th>เซสชัน</th><th>จัดการ</th></tr></thead><tbody></tbody></table>');
+  var tbody = table.querySelector('tbody');
+  users.forEach(function(u){
+    var pillClass = u.status === 'active' ? 'pill-active' : (u.status === 'suspended' ? 'pill-suspended' : 'pill-pending');
+    var tr = el('<tr><td>' + escapeHtml(u.username) + '</td><td><span class="badge-pill ' + pillClass + '">' + u.status + '</span></td><td>' + (u.hasActiveSession ? '🟢' : '⚪') + '</td><td></td></tr>');
+    var actionsTd = tr.querySelector('td:last-child');
+    var actionsWrap = el('<div style="display:flex;gap:6px;flex-wrap:wrap;"></div>');
+
+    if (u.status !== 'active'){
+      var approveBtn = el('<button class="btn btn-primary btn-sm">✅ อนุมัติ</button>');
+      approveBtn.addEventListener('click', function(){
+        apiCall('adminApproveUser', {adminKey: adminKey, username: u.username}).then(loadAdminUsers);
+      });
+      actionsWrap.appendChild(approveBtn);
+    }
+    if (u.status !== 'suspended'){
+      var suspendBtn = el('<button class="btn btn-outline btn-sm">⛔ ระงับ</button>');
+      suspendBtn.addEventListener('click', function(){
+        apiCall('adminSuspendUser', {adminKey: adminKey, username: u.username}).then(loadAdminUsers);
+      });
+      actionsWrap.appendChild(suspendBtn);
+    }
+    var resetBtn = el('<button class="btn btn-outline btn-sm">🔑 รีเซ็ตรหัส</button>');
+    resetBtn.addEventListener('click', function(){
+      var newPw = prompt('ตั้งรหัสผ่านใหม่ให้ ' + u.username + ' (อย่างน้อย 6 ตัวอักษร)');
+      if (!newPw) return;
+      apiCall('adminResetPassword', {adminKey: adminKey, username: u.username, newPassword: newPw}).then(function(resp){
+        alert(resp.ok ? 'ตั้งรหัสผ่านใหม่สำเร็จ' : 'ไม่สำเร็จ: ' + (resp.error || ''));
+      });
+    });
+    actionsWrap.appendChild(resetBtn);
+    var delBtn = el('<button class="btn btn-danger btn-sm">🗑️ ลบ</button>');
+    delBtn.addEventListener('click', function(){
+      if (!confirm('ยืนยันลบผู้ใช้ ' + u.username + '?')) return;
+      var delAttempts = confirm('ต้องการลบประวัติคะแนนของผู้ใช้นี้ด้วยหรือไม่?');
+      apiCall('adminDeleteUser', {adminKey: adminKey, username: u.username, deleteAttempts: delAttempts}).then(loadAdminUsers);
+    });
+    actionsWrap.appendChild(delBtn);
+
+    actionsTd.appendChild(actionsWrap);
+    tbody.appendChild(tr);
+  });
+  content.appendChild(table);
+}
+
+function renderAdminAttemptsTable(content, attempts){
+  content.innerHTML = '';
+  content.appendChild(el('<h2>ประวัติคะแนนทั้งหมด (' + attempts.length + ')</h2>'));
+  if (attempts.length === 0){
+    content.appendChild(el('<p class="sub">ยังไม่มีประวัติการสอบ</p>'));
+    return;
+  }
+  var table = el('<table><thead><tr><th>ผู้ใช้</th><th>วันที่</th><th>วิชา</th><th>คะแนน</th><th></th></tr></thead><tbody></tbody></table>');
+  var tbody = table.querySelector('tbody');
+  attempts.forEach(function(a){
+    var tr = el('<tr><td>' + escapeHtml(a.username) + '</td><td>' + fmtDate(a.timestamp) + '</td><td>' + escapeHtml(subjectTitle(a.subject)) + '</td><td>' + a.score + '/' + a.total + ' (' + a.percentage + '%)</td><td></td></tr>');
+    var delBtn = el('<button class="btn btn-danger btn-sm">ลบ</button>');
+    delBtn.addEventListener('click', function(){
+      if (!confirm('ยืนยันลบประวัตินี้?')) return;
+      apiCall('adminDeleteAttempt', {adminKey: adminKey, attemptId: a.attemptId}).then(loadAdminAttempts);
+    });
+    tr.querySelector('td:last-child').appendChild(delBtn);
+    tbody.appendChild(tr);
+  });
+  content.appendChild(table);
+}
+
+/* ================= BOOTSTRAP ================= */
+function boot(){
+  loadSession();
+  if (session && session.username && session.sessionToken){
+    apiCall('checkSession', {username: session.username, sessionToken: session.sessionToken}).then(function(resp){
+      if (resp.ok){ renderHome(); }
+      else { clearSession(); renderLogin(); }
+    });
+  } else {
+    renderLogin();
+  }
+}
+boot();
+
+})();
+</script>
+</body>
+</html>
