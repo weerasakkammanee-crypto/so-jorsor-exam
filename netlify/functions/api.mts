@@ -4,7 +4,7 @@
 // ฟังก์ชันนี้รันฝั่งเซิร์ฟเวอร์ของ Netlify เอง (ไม่ใช่ในเบราว์เซอร์) จึงไม่โดนข้อจำกัด CORS
 // แล้วส่งผลลัพธ์กลับไปให้หน้าเว็บแบบ same-origin (เรียก /api จากเว็บ so-jorsor-exam.netlify.app เอง)
 
-const SERVER_URL = 'https://script.google.com/macros/s/AKfycbynNa4WJCT_HWEFIXSzWeGjLm58uO5tJeruYZ_Ry526S_JVY26oFvnz5gAEXFM_ygtDCw/exec';
+const SERVER_URL = 'https://script.google.com/macros/s/AKfycbxRZDCWRkt8ehIf73SYGxoIRZZ_9ZKyCQf5aUxrMzx6JwMCLMYdcy44ZgAqb0e8n52B/exec';
 
 export default async (req) => {
   const url = new URL(req.url);
