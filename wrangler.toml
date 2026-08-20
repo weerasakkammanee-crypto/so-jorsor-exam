@@ -1,3 +1,7 @@
 name = "so-jorsor-exam"
 main = "worker.js"
 compatibility_date = "2026-08-20"
+
+# สำคัญมาก: ป้องกันไม่ให้การ deploy ครั้งใหม่ (ทุกครั้งที่ commit ขึ้น GitHub) ลบตัวแปร/secret
+# ที่เคยตั้งไว้ในหน้า Cloudflare Dashboard (Settings -> Variables and Secrets) ทิ้งไปหมด
+keep_vars = true
